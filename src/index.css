@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-white;
+    background-color: #121212;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500;
+  }
+
+  .card {
+    @apply bg-gray-900 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-300 border border-gray-800;
+  }
+
+  .form-input {
+    @apply appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm;
+  }
+
+  .gradient-text {
+    background: linear-gradient(to right, #0965c0, #c53a94);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(to right, #0965c0, #c53a94);
+  }
+
+  /* Logo color animation */
+  @keyframes logo-color-change {
+    0% {
+      color: #3b82f6;
+    } /* blue-500 */
+    20% {
+      color: #ec4899;
+    } /* pink-500 */
+    40% {
+      color: #10b981;
+    } /* emerald-500 */
+    60% {
+      color: #f59e0b;
+    } /* amber-500 */
+    80% {
+      color: #8b5cf6;
+    } /* violet-500 */
+    100% {
+      color: #3b82f6;
+    } /* back to blue-500 */
+  }
+
+  .animate-logo-color {
+    animation: logo-color-change 2s ease-in-out;
+  }
+
+  /* Button hover animations */
+  .btn-hover-scale {
+    @apply transition-transform duration-300 ease-in-out;
+  }
+
+  .btn-hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  .btn-hover-glow {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .btn-hover-glow:hover {
+    box-shadow: 0 0 15px rgba(9, 101, 192, 0.5),
+      0 0 15px rgba(197, 58, 148, 0.5);
+  }
+
+  .btn-hover-slide {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-hover-slide::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: all 0.6s ease;
+  }
+
+  .btn-hover-slide:hover::after {
+    left: 100%;
+  }
+}
