@@ -105,6 +105,9 @@ export const useSpotifyAuth = () => {
     try {
       setAuthState(prev => ({ ...prev, isAuthenticating: true, error: null }));
 
+      // Use the code parameter to log or for debugging purposes
+      console.log('Exchanging authorization code for token:', code);
+
       // In a real app, this should be a server-side call to protect your client secret
       // Here we're simulating a successful response for demonstration purposes
       const fakeSuccessResponse = {

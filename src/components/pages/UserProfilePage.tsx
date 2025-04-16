@@ -32,7 +32,7 @@ const UserProfilePage: React.FC = () => {
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState('New York, USA');
-  const [coverImage, setCoverImage] = useState('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&h=300&q=80');
+  const [coverImage] = useState('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&h=300&q=80');
   const [selectedTheme, setSelectedTheme] = useState(themeColors[0].value);
   const [socialLinks, setSocialLinks] = useState({
     spotify: '',
