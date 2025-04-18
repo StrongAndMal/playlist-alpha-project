@@ -9,8 +9,19 @@ interface SpotifyAuthState {
   tokenExpiresAt: number | null;
 }
 
-const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
-const REDIRECT_URI = `${window.location.origin}/spotify-callback`;
+// Add debugging to see what's happening with the environment variable
+console.log('Environment variables available:', import.meta.env);
+console.log('VITE_SPOTIFY_CLIENT_ID value:', import.meta.env.VITE_SPOTIFY_CLIENT_ID);
+
+// Get client ID from environment variable or use the hardcoded one
+const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '1a30b2c228d143828b877024ef5da313';
+
+// Determine the appropriate redirect URI based on environment
+const isProduction = window.location.hostname !== 'localhost';
+const REDIRECT_URI = isProduction
+  ? 'https://playlist-alpha-project.vercel.app/spotify-callback'
+  : 'https://3001-2600-1012-b215-a643-513-1fb3-9dd1-9024.ngrok-free.app/api/auth/spotify/callback';
+
 const SCOPE = 'user-read-private user-read-email playlist-read-private playlist-read-collaborative';
 const TOKEN_STORAGE_KEY = 'spotify_token_data';
 

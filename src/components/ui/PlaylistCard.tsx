@@ -1,6 +1,7 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HeartIcon, ChatBubbleLeftIcon, MusicalNoteIcon } from '@heroicons/react/24/outline';
+import { getRandomImage, handleImageError, stockImages } from '../../utils/imageUtils';
 
 interface PlaylistCardProps {
   id: string;
@@ -21,6 +22,13 @@ const PlaylistCard: FC<PlaylistCardProps> = ({
   commentCount,
   genre = 'Mixed',
 }) => {
+  const [imageSrc, setImageSrc] = useState(coverImage);
+  
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const fallbackImage = getRandomImage(stockImages.playlistCover);
+    setImageSrc(fallbackImage);
+  };
+
   return (
     <Link to={`/playlist/${id}`} className="card group">
       <div className="aspect-square relative overflow-hidden rounded-lg">
@@ -32,9 +40,10 @@ const PlaylistCard: FC<PlaylistCardProps> = ({
         </div>
         
         <img
-          src={coverImage}
+          src={imageSrc}
           alt={title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={handleImageError}
         />
         
         <div className="absolute inset-0 bg-gradient-to-t from-black opacity-50 group-hover:opacity-70 transition-opacity"></div>

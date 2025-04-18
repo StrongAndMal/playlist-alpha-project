@@ -37,6 +37,7 @@ export interface IUser extends Document {
   following: mongoose.Types.ObjectId[];
   profileTheme?: string;
   showcasePlaylists: mongoose.Types.ObjectId[];
+  isAdmin?: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -145,7 +146,11 @@ const UserSchema: Schema = new Schema(
     showcasePlaylists: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Playlist'
-    }]
+    }],
+    isAdmin: {
+      type: Boolean,
+      default: false
+    }
   },
   {
     timestamps: true

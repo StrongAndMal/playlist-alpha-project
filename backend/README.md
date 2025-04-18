@@ -85,6 +85,32 @@ backend/
 - `GET /api/spotify/playlists`: Get user's Spotify playlists
 - `GET /api/spotify/search`: Search for tracks or playlists
 
+## Recent Updates
+
+The following updates have been made to align the backend with the frontend implementation:
+
+### Playlist Features
+
+1. **Voting System**: Updated from a simple like system to a full voting system with upvotes and downvotes
+2. **Similar Playlists**: Added an endpoint to fetch similar playlists based on genre matching
+3. **Featured Playlists**: Added an endpoint to fetch featured/recommended playlists sorted by popularity
+4. **Enhanced Playlist Details**: Improved the response format to include all necessary information for the playlist detail page
+5. **Type Definitions**: Added TypeScript interfaces for consistent API responses
+
+### API Endpoints
+
+| Method | Endpoint                    | Description                              | Access         |
+| ------ | --------------------------- | ---------------------------------------- | -------------- |
+| GET    | /api/playlists              | Get all playlists with filtering options | Public         |
+| GET    | /api/playlists/featured     | Get featured/popular playlists           | Public         |
+| GET    | /api/playlists/:id          | Get a single playlist by ID              | Public/Private |
+| GET    | /api/playlists/:id/similar  | Get similar playlists                    | Public         |
+| POST   | /api/playlists              | Create a new playlist                    | Private        |
+| PUT    | /api/playlists/:id          | Update a playlist                        | Private        |
+| DELETE | /api/playlists/:id          | Delete a playlist                        | Private        |
+| POST   | /api/playlists/:id/vote     | Vote on a playlist (up/down/remove)      | Private        |
+| POST   | /api/playlists/:id/comments | Add a comment to a playlist              | Private        |
+
 ## Development
 
 ### Running Tests

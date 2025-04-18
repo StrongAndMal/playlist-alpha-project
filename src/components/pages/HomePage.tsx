@@ -1,16 +1,17 @@
 import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PlaylistCard from '../ui/PlaylistCard';
-import SpotlightCarousel from '../ui/SpotlightCarousel';
+import StaticFeaturedBanner from '../ui/StaticFeaturedBanner';
 import { FireIcon } from '@heroicons/react/24/solid';
+import { getGenreImage, getRandomImage, stockImages } from '../../utils/imageUtils';
 
-// Dummy data for community playlists
+// Dummy data for community playlists with reliable image sources
 const communityPlaylists = [
   {
     id: '1',
     title: 'Summer Vibes 2025',
     creator: 'DJ Cool',
-    coverImage: 'https://picsum.photos/400/400',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 128,
     commentCount: 24,
     genre: 'Pop'
@@ -19,7 +20,7 @@ const communityPlaylists = [
     id: '2',
     title: 'Workout Mix',
     creator: 'Fitness Guru',
-    coverImage: 'https://picsum.photos/400/401',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 95,
     commentCount: 18,
     genre: 'Hip-Hop'
@@ -28,7 +29,7 @@ const communityPlaylists = [
     id: '3',
     title: 'Chill Lofi Beats',
     creator: 'Study Buddy',
-    coverImage: 'https://picsum.photos/400/402',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 256,
     commentCount: 42,
     genre: 'Lo-Fi'
@@ -37,7 +38,7 @@ const communityPlaylists = [
     id: '4',
     title: '80s Throwbacks',
     creator: 'Retro Fan',
-    coverImage: 'https://picsum.photos/400/403',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 189,
     commentCount: 31,
     genre: 'Rock'
@@ -46,7 +47,7 @@ const communityPlaylists = [
     id: '5',
     title: 'Indie Discoveries',
     creator: 'Indie Explorer',
-    coverImage: 'https://picsum.photos/400/404',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 76,
     commentCount: 14,
     genre: 'Indie'
@@ -55,7 +56,7 @@ const communityPlaylists = [
     id: '6',
     title: 'Jazz Collection',
     creator: 'Jazz Cat',
-    coverImage: 'https://picsum.photos/400/405',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 112,
     commentCount: 27,
     genre: 'Jazz'
@@ -64,7 +65,7 @@ const communityPlaylists = [
     id: '7',
     title: 'Hip Hop Essentials',
     creator: 'Urban Beats',
-    coverImage: 'https://picsum.photos/400/406',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 223,
     commentCount: 48,
     genre: 'Hip-Hop'
@@ -73,19 +74,20 @@ const communityPlaylists = [
     id: '8',
     title: 'Electronic Dreams',
     creator: 'Techno DJ',
-    coverImage: 'https://picsum.photos/400/407',
+    coverImage: getRandomImage(stockImages.playlistCover),
     voteCount: 164,
     commentCount: 32,
     genre: 'Electronic'
   },
 ];
 
-// Sorting options
+// Genres to display in the Explore section
+const genresToExplore = ['Hip-Hop', 'Rock', 'Electronic', 'Jazz', 'Classical', 'K-Pop', 'Alternative', 'Blues'];
+
+// Sorting options - simplified for V1
 const sortOptions = [
   { label: 'Most Voted', value: 'votes' },
   { label: 'Most Recent', value: 'recent' },
-  { label: 'Most Comments', value: 'comments' },
-  { label: 'Trending', value: 'trending' },
 ];
 
 const HomePage: FC = () => {
@@ -94,12 +96,12 @@ const HomePage: FC = () => {
   return (
     <div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Spotlight Section */}
+        {/* Optional Static Featured Banner */}
         <div className="mb-12">
-          <SpotlightCarousel />
+          <StaticFeaturedBanner />
         </div>
         
-        {/* Community Voted Playlists */}
+        {/* Community Favorites */}
         <div className="mb-12">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
@@ -128,7 +130,7 @@ const HomePage: FC = () => {
           
           <div className="mt-8 text-center">
             <Link 
-              to="/community"
+              to="/browse"
               className="inline-block text-blue-400 border border-blue-400 rounded-full px-6 py-2 hover:bg-blue-400 hover:text-gray-900 transition-colors btn-hover-scale"
             >
               View All Community Playlists
@@ -140,14 +142,14 @@ const HomePage: FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-white mb-6">Explore Genres</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['Hip-Hop', 'Rock', 'Electronic', 'Jazz', 'Classical', 'K-Pop', 'Alternative', 'Blues'].map(genre => (
+            {genresToExplore.map(genre => (
               <Link 
                 key={genre}
                 to={`/genre/${genre.toLowerCase().replace(/ /g, '-')}`}
                 className="relative overflow-hidden rounded-lg group"
               >
                 <img 
-                  src={`https://picsum.photos/400/225?random=${genre}`} 
+                  src={getGenreImage(genre)} 
                   alt={genre} 
                   className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
                 />

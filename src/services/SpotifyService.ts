@@ -3,14 +3,22 @@ const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 const API_BASE_URL = 'https://api.spotify.com/v1';
 
-// You'll need to replace these with your actual Spotify Developer credentials
-const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
-const REDIRECT_URI = `${window.location.origin}/spotify-callback`; // This should match what you set in your Spotify Developer Dashboard
+// Get client ID from environment variable or use the hardcoded one
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '1a30b2c228d143828b877024ef5da313';
+
+// Determine the appropriate redirect URI based on environment
+const isProduction = window.location.hostname !== 'localhost';
+const REDIRECT_URI = isProduction
+  ? 'https://playlist-alpha-project.vercel.app/spotify-callback'
+  : 'https://3001-2600-1012-b215-a643-513-1fb3-9dd1-9024.ngrok-free.app/api/auth/spotify/callback';
+
 const SCOPES = [
   'user-read-private',
   'user-read-email',
   'user-read-playback-state',
   'user-modify-playback-state',
+  'playlist-read-private',
+  'playlist-read-collaborative',
   'streaming'
 ].join('%20');
 
@@ -190,6 +198,101 @@ export const getTrackPreview = async (trackId: string): Promise<string | null> =
     return data.preview_url;
   } catch (error) {
     console.error('Error fetching track preview:', error);
+    return null;
+  }
+};
+
+/**
+ * Get a user's playlists
+ */
+export const getUserPlaylists = async (limit = 50, offset = 0): Promise<any | null> => {
+  const accessToken = await getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/me/playlists?limit=${limit}&offset=${offset}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user playlists');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user playlists:', error);
+    return null;
+  }
+};
+
+/**
+ * Get a specific playlist by ID
+ */
+export const getPlaylistById = async (playlistId: string): Promise<any | null> => {
+  const accessToken = await getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/playlists/${playlistId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch playlist');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching playlist:', error);
+    return null;
+  }
+};
+
+/**
+ * Extract playlist ID from Spotify URL
+ */
+export const extractPlaylistId = (url: string): string | null => {
+  // Standard format: https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd?si=...
+  const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+};
+
+/**
+ * Check if a string is a valid Spotify playlist URL
+ */
+export const isValidSpotifyPlaylistUrl = (url: string): boolean => {
+  const regex = /^https:\/\/open\.spotify\.com\/playlist\/[a-zA-Z0-9]+(\?.*)?$/;
+  return regex.test(url);
+};
+
+/**
+ * Import user's Spotify profile data to the application
+ */
+export const importSpotifyProfile = async (): Promise<any | null> => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/spotify/profile/import`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to import Spotify profile');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error importing Spotify profile:', error);
     return null;
   }
 }; 

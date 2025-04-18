@@ -6,6 +6,13 @@ import * as mockDb from './mockDbService';
 let usingMockDb = false;
 let dbConnected = false;
 
+// Create a chainable interface to simulate Mongoose queries
+interface ChainableQuery {
+  select: (fields: string) => {
+    exec: () => Promise<any>;
+  };
+}
+
 /**
  * Uses the real User model or mock User service depending on database connection
  */
@@ -52,7 +59,8 @@ export const User = {
     }
   },
   
-  findOne_Chain: (query: any) => {
+  // Modified to return a chainable object with exec method
+  findOne_Chain: (query: any): ChainableQuery => {
     if (!dbConnected && config.env === 'development') {
       console.log('Using mock DB for User.findOne with chaining');
       usingMockDb = true;
@@ -62,7 +70,9 @@ export const User = {
         select: (fields: string) => {
           // In our mock, we'll just return the whole user object and include password
           // regardless of fields for simplicity
-          return mockDb.userService.findOne(query);
+          return {
+            exec: async () => mockDb.userService.findOne(query)
+          };
         }
       };
     }
@@ -70,7 +80,7 @@ export const User = {
     try {
       // Use the real mongoose model
       const UserModel = mongoose.model('User');
-      return UserModel.findOne(query);
+      return UserModel.findOne(query) as any;
     } catch (error) {
       if (config.env === 'development') {
         console.warn('Falling back to mock DB for User.findOne with chaining');
@@ -79,7 +89,45 @@ export const User = {
         // Create a chainable object for mock
         return {
           select: (fields: string) => {
-            return mockDb.userService.findOne(query);
+            return {
+              exec: async () => mockDb.userService.findOne(query)
+            };
+          }
+        };
+      }
+      throw error;
+    }
+  },
+  
+  // Modified to return a chainable object with exec method
+  findById_Chain: (id: string): ChainableQuery => {
+    if (!dbConnected && config.env === 'development') {
+      console.log('Using mock DB for User.findById_Chain');
+      usingMockDb = true;
+      
+      return {
+        select: (fields: string) => {
+          return {
+            exec: async () => mockDb.userService.findById(id)
+          };
+        }
+      };
+    }
+    
+    try {
+      // Use the real mongoose model
+      const UserModel = mongoose.model('User');
+      return UserModel.findById(id) as any;
+    } catch (error) {
+      if (config.env === 'development') {
+        console.warn('Falling back to mock DB for User.findById_Chain');
+        usingMockDb = true;
+        
+        return {
+          select: (fields: string) => {
+            return {
+              exec: async () => mockDb.userService.findById(id)
+            };
           }
         };
       }
@@ -165,22 +213,17 @@ export const Playlist = {
       usingMockDb = true;
       
       // Create a more complete chainable object for mock
-      const results = mockDb.playlistService.find(query);
-      if (results && typeof results === 'object') {
-        return {
-          ...results,
-          exec: function() {
-            // If the mock already has a limit method that returns a promise,
-            // we'll just call that with a large number as a fallback
-            if (typeof this.limit === 'function') {
-              return this.limit(100);
-            }
-            // Otherwise, create a resolved promise with an empty array
-            return Promise.resolve([]);
-          }
-        };
-      }
-      return results;
+      const chainableObject = {
+        populate: function() { return this; },
+        sort: function() { return this; },
+        skip: function() { return this; },
+        limit: function() { return this; },
+        exec: function() {
+          return Promise.resolve(mockDb.playlistService.find(query));
+        }
+      };
+      
+      return chainableObject;
     }
     
     try {
@@ -193,22 +236,17 @@ export const Playlist = {
         usingMockDb = true;
         
         // Create a more complete chainable object for mock
-        const results = mockDb.playlistService.find(query);
-        if (results && typeof results === 'object') {
-          return {
-            ...results,
-            exec: function() {
-              // If the mock already has a limit method that returns a promise,
-              // we'll just call that with a large number as a fallback
-              if (typeof this.limit === 'function') {
-                return this.limit(100);
-              }
-              // Otherwise, create a resolved promise with an empty array
-              return Promise.resolve([]);
-            }
-          };
-        }
-        return results;
+        const chainableObject = {
+          populate: function() { return this; },
+          sort: function() { return this; },
+          skip: function() { return this; },
+          limit: function() { return this; },
+          exec: function() {
+            return Promise.resolve(mockDb.playlistService.find(query));
+          }
+        };
+        
+        return chainableObject;
       }
       throw error;
     }
@@ -258,14 +296,14 @@ export const Playlist = {
 };
 
 /**
- * Set the database connection status
+ * Update the database connection status
  */
 export const setDbConnectionStatus = (status: boolean) => {
   dbConnected = status;
 };
 
 /**
- * Check if we're using the mock database
+ * Check if using mock database
  */
 export const isUsingMockDb = () => {
   return usingMockDb;

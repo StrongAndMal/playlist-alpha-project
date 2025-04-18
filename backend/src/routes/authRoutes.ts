@@ -1,5 +1,6 @@
 import express from 'express';
 import * as authController from '../controllers/authController';
+import * as spotifyAuthController from '../controllers/spotifyAuthController';
 import { auth } from '../middleware/auth';
 
 const router = express.Router();
@@ -28,5 +29,15 @@ router.put('/profile', auth, authController.updateProfile);
 // @desc    Change user password
 // @access  Private
 router.put('/password', auth, authController.changePassword);
+
+// @route   GET /api/auth/spotify
+// @desc    Initialize Spotify OAuth flow
+// @access  Public
+router.get('/spotify', spotifyAuthController.initiateSpotifyAuth);
+
+// @route   GET /api/auth/spotify/callback
+// @desc    Handle Spotify OAuth callback
+// @access  Public
+router.get('/spotify/callback', spotifyAuthController.spotifyCallback);
 
 export default router; 

@@ -1,22 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDownIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
+import { getGenreImage, getRandomImage, stockImages } from '../../utils/imageUtils';
 
-// Top genres organized by category for the dropdown
+// Top genres organized by category for the dropdown with reliable images
 const topGenres = [
-  { name: 'Pop', trending: true, image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Hip-Hop', trending: true, image: 'https://images.unsplash.com/photo-1570288685369-f7305163d0e3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Rock', trending: true, image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'R&B', trending: true, image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Electronic', trending: true, image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Country', trending: false, image: 'https://images.unsplash.com/photo-1543862475-eb136770ae9b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'K-Pop', trending: true, image: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Latin', trending: true, image: 'https://images.unsplash.com/photo-1504609813442-a9924e2973ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Indie', trending: true, image: 'https://images.unsplash.com/photo-1525362081669-2b476bb628c3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Jazz', trending: false, image: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Classical', trending: false, image: 'https://images.unsplash.com/photo-1507924538820-ede94a04019d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
-  { name: 'Metal', trending: false, image: 'https://images.unsplash.com/photo-1485579149621-3123dd979885?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
+  { name: 'Pop', image: getGenreImage('Pop') },
+  { name: 'Hip-Hop', image: getGenreImage('Hip-Hop') },
+  { name: 'Rock', image: getGenreImage('Rock') },
+  { name: 'R&B', image: getGenreImage('R&B') || stockImages.genres.default },
+  { name: 'Electronic', image: getGenreImage('Electronic') },
+  { name: 'Country', image: getGenreImage('Country') || stockImages.genres.default },
+  { name: 'K-Pop', image: getGenreImage('K-Pop') },
+  { name: 'Latin', image: getGenreImage('Latin') || stockImages.genres.default },
+  { name: 'Indie', image: getGenreImage('Indie') || stockImages.genres.default },
+  { name: 'Jazz', image: getGenreImage('Jazz') },
+  { name: 'Classical', image: getGenreImage('Classical') },
+  { name: 'Metal', image: getGenreImage('Metal') || stockImages.genres.default },
 ];
 
 // Other genres for the "View all" page
@@ -35,6 +36,7 @@ const NavigationBar: React.FC = () => {
   const [isGenreDropdownOpen, setIsGenreDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [logoAnimation, setLogoAnimation] = useState(false);
+  const [defaultAvatar] = useState(getRandomImage(stockImages.userProfile));
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user, logout } = useAuth();
   
@@ -65,6 +67,11 @@ const NavigationBar: React.FC = () => {
     // Reset animation after it completes to allow re-triggering
     setTimeout(() => setLogoAnimation(false), 2000);
   };
+
+  // Handle image loading error in a genre card
+  const handleGenreImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, genreName: string) => {
+    e.currentTarget.src = stockImages.genres.default;
+  };
   
   return (
     <nav className="bg-gray-900 shadow-lg border-b border-gray-800">
@@ -92,7 +99,7 @@ const NavigationBar: React.FC = () => {
                   className="text-white hover:text-blue-400 group px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
                   onClick={() => setIsGenreDropdownOpen(!isGenreDropdownOpen)}
                 >
-                  <span>Genres</span>
+                  <span>Browse</span>
                   <ChevronDownIcon 
                     className={`ml-1 h-4 w-4 transition-transform ${isGenreDropdownOpen ? 'rotate-180' : ''}`} 
                   />
@@ -117,18 +124,13 @@ const NavigationBar: React.FC = () => {
                                 src={genre.image} 
                                 alt={genre.name} 
                                 className="h-full w-full object-cover" 
+                                onError={(e) => handleGenreImageError(e, genre.name)}
                               />
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="text-center">
                                   <h4 className="text-white font-medium group-hover:scale-110 transition-transform duration-300">
                                     {genre.name}
                                   </h4>
-                                  {genre.trending && (
-                                    <span className="inline-flex items-center mt-1 text-yellow-300 text-xs">
-                                      <SparklesIcon className="h-3 w-3 mr-1" />
-                                      Trending
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -149,12 +151,6 @@ const NavigationBar: React.FC = () => {
                 )}
               </div>
 
-              <Link to="/community" className="text-white hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
-                Community
-              </Link>
-              <Link to="/trending" className="text-white hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
-                Trending
-              </Link>
               {isAuthenticated && (
                 <Link to="/submit" className="text-white hover:text-blue-300 transition-colors duration-200 px-3 py-2 rounded-md text-sm font-medium">
                   Submit Playlist
@@ -193,9 +189,10 @@ const NavigationBar: React.FC = () => {
                     className="flex items-center text-white hover:text-white transition-all duration-300 hover:shadow-md rounded-full"
                   >
                     <img
-                      src={user?.avatar || 'https://picsum.photos/200/200'}
+                      src={user?.avatar || defaultAvatar}
                       alt={user?.username || 'User'}
                       className="w-8 h-8 rounded-full mr-2 transition-transform duration-300 hover:scale-110"
+                      onError={(e) => {e.currentTarget.src = defaultAvatar}}
                     />
                     <span>{user?.username}</span>
                   </Link>
@@ -220,17 +217,6 @@ const NavigationBar: React.FC = () => {
                 </>
               )}
             </div>
-            
-            {/* Premium button */}
-            <Link
-              to="/premium"
-              className="hidden md:flex items-center ml-4 text-yellow-400 hover:text-yellow-300 px-3 py-2 text-sm font-medium"
-            >
-              <span className="mr-1">
-                <SparklesIcon className="h-4 w-4 inline" />
-              </span>
-              Premium
-            </Link>
             
             {/* Mobile menu button - shown on small screens */}
             <button className="md:hidden flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white">

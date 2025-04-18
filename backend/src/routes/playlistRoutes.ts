@@ -14,6 +14,11 @@ router.post('/', auth, playlistController.createPlaylist);
 // @access  Public (with optional auth for personalization)
 router.get('/', optionalAuth, playlistController.getPlaylists);
 
+// @route   GET /api/playlists/featured
+// @desc    Get featured playlists for homepage
+// @access  Public
+router.get('/featured', playlistController.getFeaturedPlaylists);
+
 // @route   GET /api/playlists/:id
 // @desc    Get a single playlist by ID
 // @access  Public (with optional auth to check if user owns private playlist)
@@ -29,14 +34,19 @@ router.put('/:id', auth, playlistController.updatePlaylist);
 // @access  Private (owner only)
 router.delete('/:id', auth, playlistController.deletePlaylist);
 
-// @route   POST /api/playlists/:id/like
-// @desc    Like or unlike a playlist
+// @route   POST /api/playlists/:id/vote
+// @desc    Vote on a playlist (upvote, downvote, or remove vote)
 // @access  Private
-router.post('/:id/like', auth, playlistController.toggleLikePlaylist);
+router.post('/:id/vote', auth, playlistController.votePlaylist);
 
 // @route   POST /api/playlists/:id/comments
 // @desc    Add a comment to a playlist
 // @access  Private
 router.post('/:id/comments', auth, playlistController.addComment);
+
+// @route   GET /api/playlists/:id/similar
+// @desc    Get similar playlists based on genre
+// @access  Public
+router.get('/:id/similar', playlistController.getSimilarPlaylists);
 
 export default router; 

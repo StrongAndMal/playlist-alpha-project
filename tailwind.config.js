@@ -26,6 +26,7 @@ module.exports = {
     },
   },
   plugins: [
+    require("@tailwindcss/aspect-ratio"),
     function ({ addUtilities }) {
       const newUtilities = {
         ".perspective-1000": {
@@ -39,6 +40,9 @@ module.exports = {
         },
         ".rotate-y-180": {
           transform: "rotateY(180deg)",
+        },
+        ".shadow-glow-sm": {
+          boxShadow: "0 0 8px 2px rgba(59, 130, 246, 0.3)",
         },
       };
       addUtilities(newUtilities);

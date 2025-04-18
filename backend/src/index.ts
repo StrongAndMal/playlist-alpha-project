@@ -9,6 +9,8 @@ import config from './config';
 import authRoutes from './routes/authRoutes';
 import playlistRoutes from './routes/playlistRoutes';
 import profileRoutes from './routes/profileRoutes';
+import profileItemRoutes from './routes/profileItemRoutes';
+import spotifyRoutes from './routes/spotifyRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -76,6 +78,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/profile-items', profileItemRoutes);
+app.use('/api/spotify', spotifyRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

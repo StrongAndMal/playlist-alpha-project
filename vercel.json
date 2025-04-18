@@ -11,5 +11,9 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "VITE_API_URL": "https://playlist-alpha-backend.vercel.app",
+    "VITE_SPOTIFY_CLIENT_ID": "1a30b2c228d143828b877024ef5da313"
+  }
 } 

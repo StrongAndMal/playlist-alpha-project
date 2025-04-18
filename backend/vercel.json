@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "MONGODB_URI": "your_mongodb_connection_string",
+    "SPOTIFY_CLIENT_ID": "1a30b2c228d143828b877024ef5da313",
+    "SPOTIFY_CLIENT_SECRET": "021e3edf32004c5fbca2ab6b82094f41",
+    "SPOTIFY_REDIRECT_URI": "https://playlist-alpha-project.vercel.app/spotify-callback",
+    "FRONTEND_URL": "https://playlist-alpha-project.vercel.app",
+    "JWT_SECRET": "your_jwt_secret_key"
+  }
+} 

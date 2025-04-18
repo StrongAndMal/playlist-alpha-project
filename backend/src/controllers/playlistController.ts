@@ -3,6 +3,12 @@ import mongoose from 'mongoose';
 import { Playlist } from '../services/dbService';
 import { IPlaylist } from '../models/Playlist';
 import { IUser } from '../models/User';
+import { ICommentResponse, IVoteStatus, IComment } from '../types/Comment';
+import { 
+  IPlaylistResponse, 
+  ISimilarPlaylistResponse, 
+  IFeaturedPlaylistResponse 
+} from '../types/Playlist';
 
 // Helper function to safely get user ID
 const getUserId = (user: any): mongoose.Types.ObjectId => {
@@ -157,9 +163,21 @@ export const getPlaylistById = async (req: Request, res: Response): Promise<void
 
     // Check if playlist is private and not the creator
     let userId = '';
+    let userVote: 'up' | 'down' | 'none' = 'none';
+    
     try {
       if (req.user) {
         userId = getUserId(req.user).toString();
+        
+        // Check user's vote status
+        const hasUpvoted = playlist.upvotes.some((id: any) => id.toString() === userId);
+        const hasDownvoted = playlist.downvotes.some((id: any) => id.toString() === userId);
+        
+        if (hasUpvoted) {
+          userVote = 'up';
+        } else if (hasDownvoted) {
+          userVote = 'down';
+        }
       }
     } catch (e) {
       // If getting user ID fails, treat as not authenticated
@@ -172,7 +190,39 @@ export const getPlaylistById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    res.status(200).json({ playlist });
+    // Format the playlist for the frontend
+    const formattedPlaylist: IPlaylistResponse = {
+      id: playlist._id.toString(),
+      title: playlist.title,
+      description: playlist.description,
+      creator: {
+        id: playlist.creator._id.toString(),
+        username: playlist.creator.username,
+        avatar: playlist.creator.avatar
+      },
+      coverImage: playlist.coverImage,
+      voteScore: playlist.upvotes.length - playlist.downvotes.length,
+      userVote,
+      spotifyId: playlist.spotifyPlaylistId,
+      genres: playlist.genres,
+      tracks: playlist.tracks,
+      isPublic: playlist.isPublic,
+      createdAt: playlist.createdAt,
+      comments: playlist.comments.map((comment: IComment) => ({
+        id: comment._id.toString(),
+        user: {
+          id: comment.user._id.toString(),
+          username: comment.user.username,
+          avatar: comment.user.avatar
+        },
+        text: comment.text,
+        timestamp: comment.createdAt
+      })),
+      commentCount: playlist.comments.length,
+      trackCount: playlist.tracks.length
+    };
+
+    res.status(200).json({ playlist: formattedPlaylist });
   } catch (error) {
     console.error('Get playlist error:', error);
     res.status(500).json({ message: 'Server error getting playlist' });
@@ -266,46 +316,64 @@ export const deletePlaylist = async (req: Request, res: Response): Promise<void>
 };
 
 /**
- * @desc    Like or unlike a playlist
- * @route   POST /api/playlists/:id/like
+ * @desc    Vote on a playlist (upvote or downvote)
+ * @route   POST /api/playlists/:id/vote
  * @access  Private
  */
-export const toggleLikePlaylist = async (req: Request, res: Response): Promise<void> => {
+export const votePlaylist = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = req.user as IUser;
     const playlist = await Playlist.findById(req.params.id).exec();
+    const { voteType } = req.body; // 'up', 'down', or 'none'
 
     if (!playlist) {
       res.status(404).json({ message: 'Playlist not found' });
       return;
     }
 
+    if (!['up', 'down', 'none'].includes(voteType)) {
+      res.status(400).json({ message: 'Invalid vote type. Must be "up", "down", or "none"' });
+      return;
+    }
+
     try {
-      const userId = getUserId(user).toString();
+      const userId = getUserId(user);
+      const userIdStr = userId.toString();
 
-      // Check if playlist is already liked
-      const isLiked = playlist.likes.some((like: any) => like.toString() === userId);
+      // Check current vote status
+      const hasUpvoted = playlist.upvotes.some((id: any) => id.toString() === userIdStr);
+      const hasDownvoted = playlist.downvotes.some((id: any) => id.toString() === userIdStr);
 
-      if (isLiked) {
-        // Unlike
-        playlist.likes = playlist.likes.filter((like: any) => like.toString() !== userId);
-      } else {
-        // Like
-        playlist.likes.push(new mongoose.Types.ObjectId(userId));
+      // Remove any existing votes
+      playlist.upvotes = playlist.upvotes.filter((id: any) => id.toString() !== userIdStr);
+      playlist.downvotes = playlist.downvotes.filter((id: any) => id.toString() !== userIdStr);
+
+      // Add new vote if not 'none'
+      if (voteType === 'up') {
+        playlist.upvotes.push(userId);
+      } else if (voteType === 'down') {
+        playlist.downvotes.push(userId);
       }
 
       await playlist.save();
 
-      res.status(200).json({ 
-        liked: !isLiked,
-        likeCount: playlist.likes.length
-      });
+      // Calculate new vote score
+      const voteScore = playlist.upvotes.length - playlist.downvotes.length;
+
+      const response: IVoteStatus = {
+        voteType: voteType as 'up' | 'down' | 'none',
+        voteScore,
+        upvoteCount: playlist.upvotes.length,
+        downvoteCount: playlist.downvotes.length
+      };
+
+      res.status(200).json(response);
     } catch (e) {
       res.status(400).json({ message: 'Invalid user ID' });
     }
   } catch (error) {
-    console.error('Like playlist error:', error);
-    res.status(500).json({ message: 'Server error liking playlist' });
+    console.error('Vote playlist error:', error);
+    res.status(500).json({ message: 'Server error voting on playlist' });
   }
 };
 
@@ -352,5 +420,87 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Add comment error:', error);
     res.status(500).json({ message: 'Server error adding comment' });
+  }
+};
+
+/**
+ * @desc    Get similar playlists based on genre
+ * @route   GET /api/playlists/:id/similar
+ * @access  Public
+ */
+export const getSimilarPlaylists = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const playlist = await Playlist.findById(req.params.id).exec();
+
+    if (!playlist) {
+      res.status(404).json({ message: 'Playlist not found' });
+      return;
+    }
+
+    // Get playlists with matching genres, excluding the current playlist
+    // Limit to 5 results for sidebar display
+    const similarPlaylists = await Playlist.find({
+      _id: { $ne: playlist._id },
+      isPublic: true,
+      genres: { $in: playlist.genres }
+    })
+      .populate('creator', 'username avatar')
+      .limit(5)
+      .exec();
+
+    // Map to a simpler representation for the frontend
+    const mappedPlaylists: ISimilarPlaylistResponse[] = similarPlaylists.map(p => ({
+      id: p._id.toString(),
+      title: p.title,
+      coverImage: p.coverImage,
+      creator: p.creator.username
+    }));
+
+    res.status(200).json({ similarPlaylists: mappedPlaylists });
+  } catch (error) {
+    console.error('Get similar playlists error:', error);
+    res.status(500).json({ message: 'Server error getting similar playlists' });
+  }
+};
+
+/**
+ * @desc    Get featured/recommended playlists for homepage
+ * @route   GET /api/playlists/featured
+ * @access  Public
+ */
+export const getFeaturedPlaylists = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { limit = 6 } = req.query;
+    const limitNum = parseInt(limit as string, 10);
+
+    // Get playlists sorted by vote score and limit to requested number
+    const featuredPlaylists = await Playlist.find({ isPublic: true })
+      .populate('creator', 'username avatar')
+      .sort({ upvotes: -1 }) // Most upvoted first
+      .limit(limitNum)
+      .exec();
+
+    // Format for frontend
+    const mappedPlaylists: IFeaturedPlaylistResponse[] = featuredPlaylists.map(playlist => ({
+      id: playlist._id.toString(),
+      title: playlist.title,
+      description: playlist.description.substring(0, 100) + (playlist.description.length > 100 ? '...' : ''),
+      creator: {
+        id: playlist.creator._id.toString(),
+        username: playlist.creator.username,
+        avatar: playlist.creator.avatar
+      },
+      coverImage: playlist.coverImage,
+      voteScore: playlist.upvotes.length - playlist.downvotes.length,
+      trackCount: playlist.tracks.length,
+      commentCount: playlist.comments.length
+    }));
+
+    res.status(200).json({ 
+      playlists: mappedPlaylists
+    });
+  } catch (error) {
+    console.error('Get featured playlists error:', error);
+    res.status(500).json({ message: 'Server error getting featured playlists' });
   }
 }; 

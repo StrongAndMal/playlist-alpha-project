@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { User } from '../services/dbService';
 import { Playlist } from '../services/dbService';
 import { IUser } from '../models/User';
+import { IPlaylist } from '../models/Playlist';
 
 /**
  * @desc    Get user profile by username
@@ -12,17 +13,16 @@ import { IUser } from '../models/User';
 export const getUserProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const username = req.params.username;
-    
-    // Find user by username and populate followers, following, and showcase playlists
-    const user = await User.findOne_Chain({ username })
-      .select('-password -spotifyAccessToken -spotifyRefreshToken');
-    
+    const user = await User.findOne({ username });
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    
-    res.status(200).json({ user });
+    const userObj = user.toJSON ? user.toJSON() : { ...user };
+    delete userObj.password;
+    delete userObj.spotifyAccessToken;
+    delete userObj.spotifyRefreshToken;
+    res.status(200).json({ user: userObj });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Server error getting user profile' });
@@ -87,54 +87,38 @@ export const toggleFollow = async (req: Request, res: Response): Promise<void> =
   try {
     const currentUser = req.user as IUser;
     const usernameToFollow = req.params.username;
-    
-    // Can't follow yourself
     if (currentUser.username === usernameToFollow) {
       res.status(400).json({ message: 'You cannot follow yourself' });
       return;
     }
-    
-    // Find the user to follow
     const userToFollow = await User.findOne({ username: usernameToFollow });
-    
     if (!userToFollow) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    
-    const currentUserId = currentUser._id.toString();
-    const userToFollowId = userToFollow._id.toString();
-    
-    // Check if already following
-    const isFollowing = currentUser.following.some(id => 
+    const currentUserId = currentUser._id?.toString() || '';
+    const userToFollowId = userToFollow._id?.toString() || '';
+    if (!currentUserId || !userToFollowId) {
+      console.error('Could not get valid user IDs for follow action');
+      res.status(500).json({ message: 'Server error processing follow request' });
+      return;
+    }
+    const isFollowing = currentUser.following.some((id: mongoose.Types.ObjectId | string) => 
       id.toString() === userToFollowId
     );
-    
     if (isFollowing) {
-      // Unfollow: Remove from following list
-      currentUser.following = currentUser.following.filter(id => 
+      currentUser.following = currentUser.following.filter((id: mongoose.Types.ObjectId | string) => 
         id.toString() !== userToFollowId
       );
-      
-      // Remove from followers list of the target user
-      userToFollow.followers = userToFollow.followers.filter(id => 
+      userToFollow.followers = userToFollow.followers.filter((id: mongoose.Types.ObjectId | string) => 
         id.toString() !== currentUserId
       );
     } else {
-      // Follow: Add to following list
       currentUser.following.push(new mongoose.Types.ObjectId(userToFollowId));
-      
-      // Add to followers list of the target user
       userToFollow.followers.push(new mongoose.Types.ObjectId(currentUserId));
-      
-      // Give experience points for social interaction
-      currentUser.experience += 5;
-      
-      // Level up if enough experience (100 per level)
-      if (currentUser.experience >= currentUser.level * 100) {
-        currentUser.level += 1;
-        
-        // Add a badge for reaching level milestones
+      currentUser.experience = (currentUser.experience || 0) + 5;
+      if (currentUser.experience >= (currentUser.level || 1) * 100) {
+        currentUser.level = (currentUser.level || 1) + 1;
         if (currentUser.level === 5) {
           currentUser.badges.push({
             id: 'level-5',
@@ -154,10 +138,7 @@ export const toggleFollow = async (req: Request, res: Response): Promise<void> =
         }
       }
     }
-    
-    // Save both users
     await Promise.all([currentUser.save(), userToFollow.save()]);
-    
     res.status(200).json({ 
       following: !isFollowing, 
       user: {
@@ -180,21 +161,15 @@ export const toggleFollow = async (req: Request, res: Response): Promise<void> =
 export const getFollowers = async (req: Request, res: Response): Promise<void> => {
   try {
     const username = req.params.username;
-    
-    // Find user and populate followers
-    const user = await User.findOne({ username }).exec();
-    
+    const user = await User.findOne({ username });
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    
-    // Get followers with minimal info
     const followers = await Promise.all(
-      user.followers.map(async (followerId) => {
-        const follower = await User.findById(followerId.toString()).exec();
+      (user.followers || []).map(async (followerId: mongoose.Types.ObjectId | string) => {
+        const follower = await User.findById(followerId.toString());
         if (!follower) return null;
-        
         return {
           id: follower._id,
           username: follower.username,
@@ -204,10 +179,7 @@ export const getFollowers = async (req: Request, res: Response): Promise<void> =
         };
       })
     );
-    
-    // Filter out null values (deleted users)
-    const validFollowers = followers.filter(follower => follower !== null);
-    
+    const validFollowers = followers.filter((follower): follower is Exclude<typeof follower, null> => follower !== null);
     res.status(200).json({ 
       followers: validFollowers,
       count: validFollowers.length 
@@ -226,21 +198,15 @@ export const getFollowers = async (req: Request, res: Response): Promise<void> =
 export const getFollowing = async (req: Request, res: Response): Promise<void> => {
   try {
     const username = req.params.username;
-    
-    // Find user and populate following
-    const user = await User.findOne({ username }).exec();
-    
+    const user = await User.findOne({ username });
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    
-    // Get following with minimal info
     const following = await Promise.all(
-      user.following.map(async (followingId) => {
-        const followedUser = await User.findById(followingId.toString()).exec();
+      (user.following || []).map(async (followingId: mongoose.Types.ObjectId | string) => {
+        const followedUser = await User.findById(followingId.toString());
         if (!followedUser) return null;
-        
         return {
           id: followedUser._id,
           username: followedUser.username,
@@ -250,10 +216,7 @@ export const getFollowing = async (req: Request, res: Response): Promise<void> =
         };
       })
     );
-    
-    // Filter out null values (deleted users)
-    const validFollowing = following.filter(followedUser => followedUser !== null);
-    
+    const validFollowing = following.filter((followedUser): followedUser is Exclude<typeof followedUser, null> => followedUser !== null);
     res.status(200).json({ 
       following: validFollowing,
       count: validFollowing.length 
@@ -274,15 +237,11 @@ export const awardBadge = async (req: Request, res: Response): Promise<void> => 
     const currentUser = req.user as IUser;
     const username = req.params.username;
     const { badgeId, badgeName, badgeDescription, badgeIcon } = req.body;
-    
-    // Check if current user is admin (in a real app, you'd have proper admin checks)
-    if (!currentUser || currentUser.level < 10) {
+    if (!currentUser || (currentUser.level || 1) < 10) {
       res.status(403).json({ message: 'Not authorized to award badges' });
       return;
     }
-    
-    // Find user to award
-    const userToAward = await User.findOne({ username }).exec();
+    const userToAward = await User.findOne({ username });
     
     if (!userToAward) {
       res.status(404).json({ message: 'User not found' });
@@ -290,7 +249,7 @@ export const awardBadge = async (req: Request, res: Response): Promise<void> => 
     }
     
     // Check if badge already awarded
-    const badgeExists = userToAward.badges.some(badge => badge.id === badgeId);
+    const badgeExists = (userToAward.badges || []).some((badge: any) => badge.id === badgeId);
     
     if (badgeExists) {
       res.status(400).json({ message: 'Badge already awarded to this user' });
@@ -298,6 +257,9 @@ export const awardBadge = async (req: Request, res: Response): Promise<void> => 
     }
     
     // Add badge
+    if (!userToAward.badges) {
+      userToAward.badges = [];
+    }
     userToAward.badges.push({
       id: badgeId,
       name: badgeName,
@@ -307,11 +269,11 @@ export const awardBadge = async (req: Request, res: Response): Promise<void> => 
     });
     
     // Give experience points
-    userToAward.experience += 25;
+    userToAward.experience = (userToAward.experience || 0) + 25;
     
     // Level up if enough experience
-    if (userToAward.experience >= userToAward.level * 100) {
-      userToAward.level += 1;
+    if (userToAward.experience >= (userToAward.level || 1) * 100) {
+      userToAward.level = (userToAward.level || 1) + 1;
     }
     
     await userToAward.save();
@@ -349,53 +311,69 @@ export const giveAward = async (req: Request, res: Response): Promise<void> => {
     }
     
     // Find user to award
-    const userToAward = await User.findOne({ username }).exec();
+    const userToAward = await User.findOne({ username });
     
     if (!userToAward) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
     
+    const currentUserId = currentUser._id?.toString();
+    if (!currentUserId) {
+      res.status(400).json({ message: 'Invalid current user ID' });
+      return;
+    }
+    
     // Add award
+    if (!userToAward.awards) {
+      userToAward.awards = [];
+    }
     userToAward.awards.push({
       id: awardId,
       name: awardName,
       description: awardDescription,
       icon: awardIcon,
-      awardedBy: new mongoose.Types.ObjectId(currentUser._id.toString()),
+      awardedBy: new mongoose.Types.ObjectId(currentUserId),
       dateAwarded: new Date()
     });
     
     // Give experience points
-    userToAward.experience += 10;
-    currentUser.experience += 5; // Giver also gets some XP
+    userToAward.experience = (userToAward.experience || 0) + 10;
+    currentUser.experience = (currentUser.experience || 0) + 5; // Giver also gets some XP
     
     // Level up if enough experience
-    if (userToAward.experience >= userToAward.level * 100) {
-      userToAward.level += 1;
+    if (userToAward.experience >= (userToAward.level || 1) * 100) {
+      userToAward.level = (userToAward.level || 1) + 1;
     }
     
-    if (currentUser.experience >= currentUser.level * 100) {
-      currentUser.level += 1;
+    if (currentUser.experience >= (currentUser.level || 1) * 100) {
+      currentUser.level = (currentUser.level || 1) + 1;
     }
     
     // Check if user gets a badge for receiving awards
+    if (!userToAward.badges) {
+      userToAward.badges = [];
+    }
     if (userToAward.awards.length === 5) {
-      userToAward.badges.push({
-        id: 'awards-5',
-        name: 'Rising Star',
-        description: 'Received 5 community awards',
-        icon: 'rising-star',
-        dateAwarded: new Date()
-      });
+      if (!userToAward.badges.some((b:any) => b.id === 'awards-5')) {
+        userToAward.badges.push({
+          id: 'awards-5',
+          name: 'Rising Star',
+          description: 'Received 5 community awards',
+          icon: 'rising-star',
+          dateAwarded: new Date()
+        });
+      }
     } else if (userToAward.awards.length === 25) {
-      userToAward.badges.push({
-        id: 'awards-25',
-        name: 'Community Favorite',
-        description: 'Received 25 community awards',
-        icon: 'trophy',
-        dateAwarded: new Date()
-      });
+       if (!userToAward.badges.some((b:any) => b.id === 'awards-25')) {
+          userToAward.badges.push({
+            id: 'awards-25',
+            name: 'Community Favorite',
+            description: 'Received 25 community awards',
+            icon: 'trophy',
+            dateAwarded: new Date()
+          });
+        }
     }
     
     // Save both users
@@ -438,26 +416,39 @@ export const updateShowcase = async (req: Request, res: Response): Promise<void>
       return;
     }
     
+    const currentUserId = user._id?.toString();
+    if (!currentUserId) {
+      res.status(400).json({ message: 'Invalid user ID' });
+      return;
+    }
+    
     // Verify playlists exist and belong to user
     const playlists = await Promise.all(
-      playlistIds.map(async (id) => {
-        const playlist = await Playlist.findById(id).exec();
-        if (!playlist) return null;
-        
-        // Check if user owns playlist or if playlist is public
-        if (playlist.creator.toString() !== user._id.toString() && !playlist.isPublic) {
+      playlistIds.map(async (id: string) => {
+        try {
+          const playlist = await Playlist.findById(id);
+          if (!playlist) return null;
+          
+          // Check if user owns playlist or if playlist is public
+          if (playlist.creator?.toString() !== currentUserId && !playlist.isPublic) {
+            return null;
+          }
+          
+          return playlist._id;
+        } catch (err) {
+          console.warn(`Error fetching playlist ${id} for showcase:`, err);
           return null;
         }
-        
-        return playlist._id;
       })
     );
     
     // Filter out null values (non-existent or unauthorized playlists)
-    const validPlaylistIds = playlists.filter(playlist => playlist !== null);
+    const validPlaylistIds = playlists.filter((playlistId): playlistId is mongoose.Types.ObjectId => 
+      playlistId instanceof mongoose.Types.ObjectId
+    );
     
     // Update user showcase
-    user.showcasePlaylists = validPlaylistIds as mongoose.Types.ObjectId[];
+    user.showcasePlaylists = validPlaylistIds;
     
     await user.save();
     
@@ -486,7 +477,7 @@ export const updateAvatarFrame = async (req: Request, res: Response): Promise<vo
     // and verify that the user has met the requirements
     
     // For demo purposes, we'll just allow it if the user is at least level 3
-    if (user.level < 3 && frameId !== 'default') {
+    if ((user.level || 1) < 3 && frameId !== 'default') {
       res.status(403).json({ 
         message: 'You need to be at least level 3 to use custom frames'
       });

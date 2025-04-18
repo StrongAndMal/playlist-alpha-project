@@ -14,7 +14,7 @@ interface IRequest extends Request {
  * @route   GET /api/items
  * @access  Public
  */
-export const getAllItems = async (req: Request, res: Response): Promise<Response> => {
+export const getAllItems = async (req: Request, res: Response): Promise<void> => {
   try {
     const { type, rarity, obtainMethod } = req.query;
     
@@ -25,10 +25,10 @@ export const getAllItems = async (req: Request, res: Response): Promise<Response
     if (obtainMethod) filter.obtainMethod = obtainMethod;
     
     const items = await ProfileItem.find(filter).sort({ rarity: 1, name: 1 });
-    return res.status(200).json(items);
+    res.status(200).json(items);
   } catch (error) {
     console.error('Error fetching profile items:', error);
-    return res.status(500).json({ error: 'Failed to fetch profile items' });
+    res.status(500).json({ error: 'Failed to fetch profile items' });
   }
 };
 
@@ -37,7 +37,7 @@ export const getAllItems = async (req: Request, res: Response): Promise<Response
  * @route   GET /api/items/available
  * @access  Private
  */
-export const getAvailableItems = async (req: IRequest, res: Response): Promise<Response> => {
+export const getAvailableItems = async (req: IRequest, res: Response): Promise<void> => {
   try {
     const user = req.user as IUser;
     
@@ -72,10 +72,10 @@ export const getAvailableItems = async (req: IRequest, res: Response): Promise<R
       return false;
     });
     
-    return res.status(200).json({ items: availableItems });
+    res.status(200).json({ items: availableItems });
   } catch (error) {
     console.error('Get available items error:', error);
-    return res.status(500).json({ message: 'Server error getting available items' });
+    res.status(500).json({ message: 'Server error getting available items' });
   }
 };
 
@@ -84,7 +84,7 @@ export const getAvailableItems = async (req: IRequest, res: Response): Promise<R
  * @route   POST /api/items
  * @access  Private (Admin)
  */
-export const createItem = async (req: Request, res: Response) => {
+export const createItem = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       name,
@@ -101,12 +101,14 @@ export const createItem = async (req: Request, res: Response) => {
     
     // Validate required fields
     if (!name || !description || !type || !obtainMethod || !rarity || !imageUrl) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
     }
     
     // Validate obtainMethod is 'purchase' if price is provided
     if (obtainMethod === 'purchase' && !price) {
-      return res.status(400).json({ error: 'Price is required for purchasable items' });
+      res.status(400).json({ error: 'Price is required for purchasable items' });
+      return;
     }
     
     const newItem = new ProfileItem({
@@ -123,10 +125,10 @@ export const createItem = async (req: Request, res: Response) => {
     });
     
     const savedItem = await newItem.save();
-    return res.status(201).json(savedItem);
+    res.status(201).json(savedItem);
   } catch (error) {
     console.error('Error creating profile item:', error);
-    return res.status(500).json({ error: 'Failed to create profile item' });
+    res.status(500).json({ error: 'Failed to create profile item' });
   }
 };
 
@@ -135,12 +137,13 @@ export const createItem = async (req: Request, res: Response) => {
  * @route   PUT /api/items/:itemId
  * @access  Private (Admin)
  */
-export const updateItem = async (req: Request, res: Response) => {
+export const updateItem = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid item ID format' });
+      res.status(400).json({ error: 'Invalid item ID format' });
+      return;
     }
     
     const updatedItem = await ProfileItem.findByIdAndUpdate(
@@ -150,13 +153,14 @@ export const updateItem = async (req: Request, res: Response) => {
     );
     
     if (!updatedItem) {
-      return res.status(404).json({ error: 'Profile item not found' });
+      res.status(404).json({ error: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json(updatedItem);
+    res.status(200).json(updatedItem);
   } catch (error) {
     console.error('Error updating profile item:', error);
-    return res.status(500).json({ error: 'Failed to update profile item' });
+    res.status(500).json({ error: 'Failed to update profile item' });
   }
 };
 
@@ -165,51 +169,55 @@ export const updateItem = async (req: Request, res: Response) => {
  * @route   DELETE /api/items/:itemId
  * @access  Private (Admin)
  */
-export const deleteItem = async (req: Request, res: Response) => {
+export const deleteItem = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid item ID format' });
+      res.status(400).json({ error: 'Invalid item ID format' });
+      return;
     }
     
     const deletedItem = await ProfileItem.findByIdAndDelete(id);
     
     if (!deletedItem) {
-      return res.status(404).json({ error: 'Profile item not found' });
+      res.status(404).json({ error: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json({ message: 'Profile item deleted successfully' });
+    res.status(200).json({ message: 'Profile item deleted successfully' });
   } catch (error) {
     console.error('Error deleting profile item:', error);
-    return res.status(500).json({ error: 'Failed to delete profile item' });
+    res.status(500).json({ error: 'Failed to delete profile item' });
   }
 };
 
 // Get a profile item by ID
-export const getItemById = async (req: Request, res: Response) => {
+export const getItemById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid item ID format' });
+      res.status(400).json({ error: 'Invalid item ID format' });
+      return;
     }
     
     const item = await ProfileItem.findById(id);
     
     if (!item) {
-      return res.status(404).json({ error: 'Profile item not found' });
+      res.status(404).json({ error: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json(item);
+    res.status(200).json(item);
   } catch (error) {
     console.error('Error fetching profile item:', error);
-    return res.status(500).json({ error: 'Failed to fetch profile item' });
+    res.status(500).json({ error: 'Failed to fetch profile item' });
   }
 };
 
 // Get all profile items with optional filtering
-export const getAllProfileItems = async (req: Request, res: Response) => {
+export const getAllProfileItems = async (req: Request, res: Response): Promise<void> => {
   try {
     const { type, rarity } = req.query;
     
@@ -219,42 +227,45 @@ export const getAllProfileItems = async (req: Request, res: Response) => {
     if (rarity) filter.rarity = rarity;
     
     const profileItems = await ProfileItem.find(filter);
-    return res.status(200).json(profileItems);
+    res.status(200).json(profileItems);
   } catch (error) {
     console.error('Error fetching profile items:', error);
-    return res.status(500).json({ message: 'Error fetching profile items' });
+    res.status(500).json({ message: 'Error fetching profile items' });
   }
 };
 
 // Get a profile item by ID
-export const getProfileItemById = async (req: Request, res: Response) => {
+export const getProfileItemById = async (req: Request, res: Response): Promise<void> => {
   try {
     const profileItem = await ProfileItem.findById(req.params.id);
     
     if (!profileItem) {
-      return res.status(404).json({ message: 'Profile item not found' });
+      res.status(404).json({ message: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json(profileItem);
+    res.status(200).json(profileItem);
   } catch (error) {
     console.error('Error fetching profile item:', error);
-    return res.status(500).json({ message: 'Error fetching profile item' });
+    res.status(500).json({ message: 'Error fetching profile item' });
   }
 };
 
 // Create a new profile item (admin only)
-export const createProfileItem = async (req: IRequest, res: Response) => {
+export const createProfileItem = async (req: IRequest, res: Response): Promise<void> => {
   try {
     // Check if user is admin
     if (!req.user?.isAdmin) {
-      return res.status(403).json({ message: 'Admin access required' });
+      res.status(403).json({ message: 'Admin access required' });
+      return;
     }
     
     const { name, description, type, imageUrl, rarity, price } = req.body;
     
     // Validate required fields
     if (!name || !type || !imageUrl) {
-      return res.status(400).json({ message: 'Name, type, and imageUrl are required' });
+      res.status(400).json({ message: 'Name, type, and imageUrl are required' });
+      return;
     }
     
     const newProfileItem = new ProfileItem({
@@ -267,19 +278,20 @@ export const createProfileItem = async (req: IRequest, res: Response) => {
     });
     
     const savedItem = await newProfileItem.save();
-    return res.status(201).json(savedItem);
+    res.status(201).json(savedItem);
   } catch (error) {
     console.error('Error creating profile item:', error);
-    return res.status(500).json({ message: 'Error creating profile item' });
+    res.status(500).json({ message: 'Error creating profile item' });
   }
 };
 
 // Update an existing profile item (admin only)
-export const updateProfileItem = async (req: IRequest, res: Response) => {
+export const updateProfileItem = async (req: IRequest, res: Response): Promise<void> => {
   try {
     // Check if user is admin
     if (!req.user?.isAdmin) {
-      return res.status(403).json({ message: 'Admin access required' });
+      res.status(403).json({ message: 'Admin access required' });
+      return;
     }
     
     const { name, description, type, imageUrl, rarity, price } = req.body;
@@ -298,33 +310,36 @@ export const updateProfileItem = async (req: IRequest, res: Response) => {
     );
     
     if (!updatedItem) {
-      return res.status(404).json({ message: 'Profile item not found' });
+      res.status(404).json({ message: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json(updatedItem);
+    res.status(200).json(updatedItem);
   } catch (error) {
     console.error('Error updating profile item:', error);
-    return res.status(500).json({ message: 'Error updating profile item' });
+    res.status(500).json({ message: 'Error updating profile item' });
   }
 };
 
 // Delete a profile item (admin only)
-export const deleteProfileItem = async (req: IRequest, res: Response) => {
+export const deleteProfileItem = async (req: IRequest, res: Response): Promise<void> => {
   try {
     // Check if user is admin
     if (!req.user?.isAdmin) {
-      return res.status(403).json({ message: 'Admin access required' });
+      res.status(403).json({ message: 'Admin access required' });
+      return;
     }
     
     const deletedItem = await ProfileItem.findByIdAndDelete(req.params.id);
     
     if (!deletedItem) {
-      return res.status(404).json({ message: 'Profile item not found' });
+      res.status(404).json({ message: 'Profile item not found' });
+      return;
     }
     
-    return res.status(200).json({ message: 'Profile item deleted successfully' });
+    res.status(200).json({ message: 'Profile item deleted successfully' });
   } catch (error) {
     console.error('Error deleting profile item:', error);
-    return res.status(500).json({ message: 'Error deleting profile item' });
+    res.status(500).json({ message: 'Error deleting profile item' });
   }
 }; 

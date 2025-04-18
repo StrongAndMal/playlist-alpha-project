@@ -18,7 +18,8 @@ export interface IPlaylist extends Document {
   }[];
   spotifyPlaylistId?: string;
   isPublic: boolean;
-  likes: mongoose.Types.ObjectId[];
+  upvotes: mongoose.Types.ObjectId[];
+  downvotes: mongoose.Types.ObjectId[];
   comments: {
     user: mongoose.Types.ObjectId;
     text: string;
@@ -26,7 +27,7 @@ export interface IPlaylist extends Document {
   }[];
   createdAt: Date;
   updatedAt: Date;
-  likeCount: number;
+  voteScore: number;
   commentCount: number;
   trackCount: number;
 }
@@ -91,7 +92,13 @@ const PlaylistSchema: Schema = new Schema(
       type: Boolean,
       default: true
     },
-    likes: [
+    upvotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ],
+    downvotes: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -120,9 +127,9 @@ const PlaylistSchema: Schema = new Schema(
   }
 );
 
-// Virtual for like count
-PlaylistSchema.virtual('likeCount').get(function(this: IPlaylist) {
-  return this.likes.length;
+// Virtual for vote score (upvotes - downvotes)
+PlaylistSchema.virtual('voteScore').get(function(this: IPlaylist) {
+  return this.upvotes.length - this.downvotes.length;
 });
 
 // Virtual for comment count

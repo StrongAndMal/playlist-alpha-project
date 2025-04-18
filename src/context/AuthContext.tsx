@@ -7,6 +7,15 @@ export interface User {
   email: string;
   avatar?: string;
   bio?: string;
+  spotifyId?: string;
+  spotifyProfile?: {
+    displayName: string;
+    email?: string;
+    country?: string;
+    product?: string;
+    spotifyUrl: string;
+    followers?: number;
+  };
 }
 
 // Define context type

@@ -2,31 +2,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
-
-// Top 50 music genres for dropdown
-const musicGenres = [
-  'Pop', 'Rock', 'Hip-Hop', 'R&B', 'Country', 'EDM', 'Dance', 'Electronic', 
-  'Jazz', 'Blues', 'Soul', 'Classical', 'Folk', 'Reggae', 'Metal', 
-  'Punk', 'Alternative', 'Indie', 'K-Pop', 'J-Pop', 'Latin', 'Trap', 
-  'Disco', 'Funk', 'Gospel', 'House', 'Techno', 'Ambient', 'Lo-Fi', 
-  'Dubstep', 'Drum & Bass', 'Trance', 'Synthwave', 'Grime', 'Drill', 
-  'Opera', 'Bluegrass', 'Psychedelic', 'Ska', 'Grunge', 'New Wave', 
-  'Rap', 'Emo', 'Post-rock', 'Progressive', 'Experimental', 'World Music',
-  'Afrobeat', 'Salsa', 'Flamenco'
-];
+import BrowseDropdownMenu from './BrowseDropdownMenu';
 
 const NavigationBar: React.FC = () => {
-  const [isGenreDropdownOpen, setIsGenreDropdownOpen] = useState(false);
+  const [isBrowseDropdownOpen, setIsBrowseDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [logoAnimation, setLogoAnimation] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const browseDropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user, logout } = useAuth();
   
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsGenreDropdownOpen(false);
+      if (browseDropdownRef.current && !browseDropdownRef.current.contains(event.target as Node)) {
+        setIsBrowseDropdownOpen(false);
       }
     }
     
@@ -70,47 +59,24 @@ const NavigationBar: React.FC = () => {
                 Home
               </Link>
               
-              {/* Genre dropdown */}
-              <div className="relative" ref={dropdownRef}>
+              {/* Browse dropdown */}
+              <div className="relative" ref={browseDropdownRef}>
                 <button 
                   className="text-white hover:text-blue-400 group px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
-                  onClick={() => setIsGenreDropdownOpen(!isGenreDropdownOpen)}
+                  onClick={() => setIsBrowseDropdownOpen(!isBrowseDropdownOpen)}
+                  onMouseEnter={() => setIsBrowseDropdownOpen(true)}
                 >
-                  <span>Genres</span>
+                  <span>Browse</span>
                   <ChevronDownIcon 
-                    className={`ml-1 h-4 w-4 transition-transform ${isGenreDropdownOpen ? 'rotate-180' : ''}`} 
+                    className={`ml-1 h-4 w-4 transition-transform ${isBrowseDropdownOpen ? 'rotate-180' : ''}`} 
                   />
                 </button>
                 
-                {/* Dropdown panel */}
-                {isGenreDropdownOpen && (
-                  <div className="absolute z-50 left-0 mt-2 w-auto max-w-screen-lg rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 text-white">
-                    <div className="p-4">
-                      <h3 className="text-sm font-bold text-blue-400 mb-3">Browse Genres</h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-2">
-                        {musicGenres.map((genre) => (
-                          <Link
-                            key={genre}
-                            to={`/genre/${genre.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="text-sm whitespace-nowrap text-white hover:text-blue-400 transition-colors"
-                            onClick={() => setIsGenreDropdownOpen(false)}
-                          >
-                            {genre}
-                          </Link>
-                        ))}
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-gray-700 text-right">
-                        <Link
-                          to="/genres"
-                          className="inline-block text-sm text-blue-400 hover:text-blue-300"
-                          onClick={() => setIsGenreDropdownOpen(false)}
-                        >
-                          View all genres →
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Browse Dropdown Menu */}
+                <BrowseDropdownMenu 
+                  isOpen={isBrowseDropdownOpen} 
+                  onClose={() => setIsBrowseDropdownOpen(false)} 
+                />
               </div>
               
               <Link to="/community" className="text-white hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
@@ -160,6 +126,9 @@ const NavigationBar: React.FC = () => {
                       src={user?.avatar || 'https://picsum.photos/200/200'}
                       alt={user?.username || 'User'}
                       className="w-8 h-8 rounded-full mr-2 transition-transform duration-300 hover:scale-110"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=User';
+                      }}
                     />
                     <span>{user?.username}</span>
                   </Link>
