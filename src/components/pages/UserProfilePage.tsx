@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import PlaylistCard from '../ui/PlaylistCard';
 import { useAuth } from '../../context/AuthContext';
 import { PencilIcon, LinkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import UserProfileView from '../profile/UserProfileView';
 
 // Define playlist type
 interface Playlist {
@@ -129,8 +130,66 @@ const UserProfilePage: React.FC = () => {
     });
   };
 
+  // For the newer profile view integration with the updated UserProfileView component
+  // This is a simplified example - add this where you want to use the updated profile view
+  // instead of the older implementation
+  const userProfileViewData = {
+    id: user.id,
+    username: user.username || username,
+    displayName: username, // Use username as displayName since it's available
+    bio: user.bio || bio,
+    avatarUrl: user.avatar || 'https://picsum.photos/200/200',
+    bannerUrl: coverImage,
+    isPrivate: false,
+    isCurrentUser: true,
+    isVerified: true,
+    isPremium: true, // Set this based on your user state or subscription status
+    followersCount: 256,
+    followingCount: 184,
+    joinDate: new Date().toISOString(), // Use current date for now
+    showCurrentlyListening: true,
+    currentlyPlaying: {
+      title: 'Bohemian Rhapsody',
+      artist: 'Queen',
+      albumArt: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80'
+    },
+    socialLinks: [
+      { platform: 'spotify', url: 'https://open.spotify.com/user/example' },
+      { platform: 'instagram', url: 'https://instagram.com/musiclover42' },
+      { platform: 'twitter', url: 'https://twitter.com/musiclover42' }
+    ]
+  };
+
+  // This is just to show where you'd use the newer profile view component
+  // You can replace your current profile UI with this
+  const renderNewProfileView = () => {
+    // Convert the dummy playlists to the format expected by UserProfileView
+    const convertedPlaylists = dummyPlaylists.map(playlist => ({
+      id: playlist.id,
+      name: playlist.title,
+      imageUrl: playlist.coverImage,
+      tracksCount: Math.floor(Math.random() * 20) + 5, // Random number of tracks
+      likes: playlist.voteCount
+    }));
+    
+    return (
+      <UserProfileView
+        profile={userProfileViewData}
+        playlists={convertedPlaylists}
+        onEditProfile={() => setIsEditing(true)}
+        onViewSettings={() => console.log('Settings view')}
+        onLogout={handleLogout}
+      />
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-12">
+      {/* Use this to render the new profile view */}
+      {renderNewProfileView()}
+      
+      {/* Or you can keep your existing UI with the code below */}
+      {/* Comment out or remove the existing UI if you're fully switching to the new profile view */}
       {/* Cover Image */}
       <div 
         className="relative h-60 bg-gray-800 rounded-b-lg overflow-hidden"
