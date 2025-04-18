@@ -32,7 +32,7 @@ A web application for discovering and sharing music playlists built with React, 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/playlist-alpha-project.git
+git clone https://github.com/StrongAndMal/playlist-alpha-project.git
 cd playlist-alpha-project
 ```
 
