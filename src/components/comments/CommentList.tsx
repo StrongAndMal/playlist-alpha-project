@@ -6,7 +6,7 @@ interface Comment {
   user: {
     id: string;
     username: string;
-    avatar: string;
+    avatar?: string;
   };
   text: string;
   timestamp: string;

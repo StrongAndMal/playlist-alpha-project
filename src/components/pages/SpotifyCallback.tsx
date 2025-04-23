@@ -12,49 +12,55 @@ const SpotifyCallback: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[SpotifyCallback] Current Origin:', window.location.origin);
     const handleCallback = async () => {
-      // Get the URL parameters
-      const urlParams = new URLSearchParams(location.search);
-      const code = urlParams.get('code');
-      const state = urlParams.get('state');
-      const error = urlParams.get('error');
-      const token = urlParams.get('token');
-      const storedState = localStorage.getItem('spotify_auth_state');
-
-      // Clean up the state from localStorage
-      localStorage.removeItem('spotify_auth_state');
-
-      // If we received a token directly (from backend redirect), store it and go to profile
-      if (token) {
-        localStorage.setItem('token', token);
-        setStatus('success');
-        setTimeout(() => {
-          navigate('/profile');
-        }, 1500);
-        return;
-      }
-
-      // Handle errors or state mismatch
-      if (error) {
-        setStatus('error');
-        setErrorMessage(`Spotify authentication error: ${error}`);
-        return;
-      }
-
-      if (!code) {
-        setStatus('error');
-        setErrorMessage('No authorization code found in the URL');
-        return;
-      }
-
-      if (state && state !== storedState) {
-        console.warn('State mismatch. Expected:', storedState, 'Received:', state);
-        setStatus('error');
-        setErrorMessage('State mismatch. Possible CSRF attack or session expired.');
-        return;
-      }
-
       try {
+        // Get the URL parameters
+        const urlParams = new URLSearchParams(location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+        const token = urlParams.get('token');
+        
+        // Get stored state from sessionStorage
+        const storedState = sessionStorage.getItem('spotify_auth_state');
+        
+        console.log('[SpotifyCallback] Received state from URL:', state);
+        console.log('[SpotifyCallback] Retrieved stored state:', storedState);
+
+        // Clean up the state from storage
+        sessionStorage.removeItem('spotify_auth_state');
+
+        // If we received a token directly (from backend redirect), store it and go to profile
+        if (token) {
+          localStorage.setItem('token', token);
+          setStatus('success');
+          setTimeout(() => {
+            navigate('/profile');
+          }, 1500);
+          return;
+        }
+
+        // Handle errors or state mismatch
+        if (error) {
+          setStatus('error');
+          setErrorMessage(`Spotify authentication error: ${error}`);
+          return;
+        }
+
+        if (!code) {
+          setStatus('error');
+          setErrorMessage('No authorization code found in the URL');
+          return;
+        }
+
+        if (!state || !storedState || state !== storedState) {
+          console.warn('State mismatch. Expected:', storedState, 'Received:', state);
+          setStatus('error');
+          setErrorMessage('State mismatch. Please try logging in again.');
+          return;
+        }
+
         // Exchange the code for an access token
         const result = await exchangeCodeForToken(code);
         

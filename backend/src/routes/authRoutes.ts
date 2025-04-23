@@ -5,15 +5,7 @@ import { auth } from '../middleware/auth';
 
 const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
-router.post('/register', authController.register);
-
-// @route   POST /api/auth/login
-// @desc    Login a user
-// @access  Public
-router.post('/login', authController.login);
+// NOTE: V1 uses Spotify OAuth only, no local email/password routes.
 
 // @route   GET /api/auth/me
 // @desc    Get current user profile
@@ -25,19 +17,8 @@ router.get('/me', auth, authController.getCurrentUser);
 // @access  Private
 router.put('/profile', auth, authController.updateProfile);
 
-// @route   PUT /api/auth/password
-// @desc    Change user password
-// @access  Private
-router.put('/password', auth, authController.changePassword);
-
-// @route   GET /api/auth/spotify
-// @desc    Initialize Spotify OAuth flow
-// @access  Public
+// Spotify OAuth routes
 router.get('/spotify', spotifyAuthController.initiateSpotifyAuth);
-
-// @route   GET /api/auth/spotify/callback
-// @desc    Handle Spotify OAuth callback
-// @access  Public
 router.get('/spotify/callback', spotifyAuthController.spotifyCallback);
 
 export default router; 

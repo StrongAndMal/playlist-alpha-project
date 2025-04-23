@@ -53,19 +53,12 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
                 </div>
                 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 btn-hover-scale"
-                  >
-                    Explore Now
-                  </button>
                   <Link
-                    to="/signup"
-                    onClick={handleClose}
-                    className="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white gradient-bg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 btn-hover-glow btn-hover-slide"
+                    to="/login"
+                    className="inline-flex justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    onClick={onClose}
                   >
-                    Sign Up
+                    Login to Get Started
                   </Link>
                 </div>
               </div>

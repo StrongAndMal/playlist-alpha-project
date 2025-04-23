@@ -29,20 +29,27 @@ const BrowseDropdownMenu: React.FC<BrowseDropdownMenuProps> = ({ isOpen, onClose
       >
         Most Popular
       </Link>
+      <Link
+        to="/browse?sort=newest"
+        className="block px-4 py-2 text-sm text-white hover:bg-gray-700 hover:text-blue-400"
+        onClick={onClose}
+      >
+        Newest
+      </Link>
 
       {/* Separator */}
       <div className="border-t border-gray-700 my-1"></div>
 
-      {/* Genres subheader */}
+      {/* Top Genres subheader - Non-Clickable */}
       <div className="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-        Genres
+        Top Genres
       </div>
 
       {/* Top genre links */}
       {topGenres.map((genre) => (
         <Link
           key={genre}
-          to={`/genre/${genre.toLowerCase()}`}
+          to={`/genre/${genre.toLowerCase().replace(/\s+/g, '-')}`}
           className="block px-4 py-2 text-sm text-white hover:bg-gray-700 hover:text-blue-400"
           onClick={onClose}
         >
@@ -57,7 +64,7 @@ const BrowseDropdownMenu: React.FC<BrowseDropdownMenuProps> = ({ isOpen, onClose
         className="block px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 hover:text-blue-300"
         onClick={onClose}
       >
-        View All Genres
+        All Genres
       </Link>
     </div>
   );

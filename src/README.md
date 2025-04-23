@@ -32,7 +32,7 @@ src/
 - **HomePage**: The landing page
 - **PlaylistDetailPage**: Displays details for a specific playlist
 - **SubmitPlaylistPage**: Form to submit a new playlist
-- **LoginPage** & **SignupPage**: Authentication pages
+- **LoginPage**: Handles user authentication
 - **UserProfilePage**: User profile display and management
 - **TermsAndConditions** & **PrivacyPolicy**: Legal pages
 - **SpotifyCallback**: Handles Spotify OAuth callback

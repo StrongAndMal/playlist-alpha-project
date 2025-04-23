@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 
@@ -7,7 +6,6 @@ import config from '../config';
 export interface IUser extends Document {
   username: string;
   email: string;
-  password: string;
   avatar?: string;
   avatarFrame?: string;
   bio?: string;
@@ -40,7 +38,6 @@ export interface IUser extends Document {
   isAdmin?: boolean;
   createdAt: Date;
   updatedAt: Date;
-  comparePassword(candidatePassword: string): Promise<boolean>;
   generateAuthToken(): string;
 }
 
@@ -62,12 +59,6 @@ const UserSchema: Schema = new Schema(
       trim: true,
       lowercase: true,
       match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please provide a valid email address']
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters long'],
-      select: false
     },
     avatar: {
       type: String,
@@ -176,24 +167,6 @@ UserSchema.virtual('badgeCount').get(function(this: IUser) {
 UserSchema.virtual('awardCount').get(function(this: IUser) {
   return this.awards.length;
 });
-
-// Hash password before saving
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password as string, salt);
-    next();
-  } catch (error) {
-    next(error as Error);
-  }
-});
-
-// Method to compare password
-UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
 
 // Method to generate JWT token
 UserSchema.methods.generateAuthToken = function(): string {

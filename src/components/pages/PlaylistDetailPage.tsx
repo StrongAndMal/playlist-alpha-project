@@ -53,7 +53,7 @@ const PlaylistDetailPage: React.FC = () => {
     setErrorMessage(null);
     
     // Fetch playlist
-    fetch(`http://localhost:5001/api/playlists/${playlistId}`)
+    fetch(`http://127.0.0.1:5001/api/playlists/${playlistId}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Failed to fetch playlist data');
@@ -64,7 +64,7 @@ const PlaylistDetailPage: React.FC = () => {
         setPlaylist(data.playlist);
         
         // Fetch similar playlists after getting playlist data
-        return fetch(`http://localhost:5001/api/playlists/${playlistId}/similar`);
+        return fetchSimilarPlaylists();
       })
       .then(response => {
         if (!response.ok) {
@@ -83,10 +83,14 @@ const PlaylistDetailPage: React.FC = () => {
       });
   }, [playlistId]);
 
+  const fetchSimilarPlaylists = () => {
+    return fetch(`http://127.0.0.1:5001/api/playlists/${playlistId}/similar`);
+  };
+
   // Handle upvote/downvote
   const handleVote = async (newScore: number, voteType: 'up' | 'down' | 'none') => {
     try {
-      const response = await fetch(`http://localhost:5001/api/playlists/${playlistId}/vote`, {
+      const response = await fetch(`http://127.0.0.1:5001/api/playlists/${playlistId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +119,7 @@ const PlaylistDetailPage: React.FC = () => {
   // Comment handler function
   const handleCommentSubmit = async (text: string): Promise<void> => {
     try {
-      const response = await fetch(`http://localhost:5001/api/playlists/${playlistId}/comments`, {
+      const response = await fetch(`http://127.0.0.1:5001/api/playlists/${playlistId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

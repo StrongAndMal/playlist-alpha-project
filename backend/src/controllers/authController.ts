@@ -54,60 +54,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * @desc    Login a user
- * @route   POST /api/auth/login
- * @access  Public
- */
-export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      res.status(400).json({ message: 'Please provide email and password' });
-      return;
-    }
-
-    // Since we're in development mode, use a simplified approach to avoid TypeScript errors
-    // In production, we would use proper Mongoose chaining with proper types
-    const user = await User.findOne({ email });
-    
-    if (!user) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
-
-    // Check password - assumes comparePassword is directly available on user
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
-
-    // Generate token
-    const token = user.generateAuthToken();
-
-    // Send response without password
-    res.status(200).json({
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        favoriteGenres: user.favoriteGenres,
-        createdAt: user.createdAt,
-      }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
-  }
-};
-
-/**
  * @desc    Get current user profile
  * @route   GET /api/auth/me
  * @access  Private

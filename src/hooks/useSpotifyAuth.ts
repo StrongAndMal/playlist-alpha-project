@@ -13,14 +13,15 @@ interface SpotifyAuthState {
 console.log('Environment variables available:', import.meta.env);
 console.log('VITE_SPOTIFY_CLIENT_ID value:', import.meta.env.VITE_SPOTIFY_CLIENT_ID);
 
-// Get client ID from environment variable or use the hardcoded one
-const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '1a30b2c228d143828b877024ef5da313';
+// Get client ID from environment variable
+const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
-// Determine the appropriate redirect URI based on environment
-const isProduction = window.location.hostname !== 'localhost';
-const REDIRECT_URI = isProduction
-  ? 'https://playlist-alpha-project.vercel.app/spotify-callback'
-  : 'https://3001-2600-1012-b215-a643-513-1fb3-9dd1-9024.ngrok-free.app/api/auth/spotify/callback';
+// Always use the configured redirect URI from environment
+const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;
+if (!REDIRECT_URI) {
+  console.error('VITE_REDIRECT_URI is not configured in environment variables');
+}
+console.log('Spotify Auth hook - Redirect URI:', REDIRECT_URI);
 
 const SCOPE = 'user-read-private user-read-email playlist-read-private playlist-read-collaborative';
 const TOKEN_STORAGE_KEY = 'spotify_token_data';
@@ -81,35 +82,53 @@ export const useSpotifyAuth = () => {
   }, [authState.accessToken, authState.tokenExpiresAt]);
 
   const initiateLogin = useCallback(() => {
-    if (!SPOTIFY_CLIENT_ID) {
+    console.log('[useSpotifyAuth] Attempting to initiate login...');
+    console.log('[useSpotifyAuth] Retrieved VITE_SPOTIFY_CLIENT_ID:', SPOTIFY_CLIENT_ID);
+    console.log('[useSpotifyAuth] Retrieved VITE_REDIRECT_URI:', REDIRECT_URI);
+    
+    if (!SPOTIFY_CLIENT_ID || !REDIRECT_URI) {
+      console.error('[useSpotifyAuth] ERROR: Spotify configuration incomplete. Check .env.local and ensure server was restarted.');
       setAuthState(prev => ({
         ...prev,
-        error: 'Spotify client ID is not configured',
+        error: 'Spotify configuration is incomplete',
       }));
       return;
     }
 
     // Generate a random state value for security
-    const state = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('spotify_auth_state', state);
+    const state = crypto.randomUUID();
+    console.log('[useSpotifyAuth] Generated state:', state);
+    sessionStorage.setItem('spotify_auth_state', state);
 
     // Build the authorization URL
     const authUrl = new URL('https://accounts.spotify.com/authorize');
     const params = {
       client_id: SPOTIFY_CLIENT_ID,
       response_type: 'code',
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: REDIRECT_URI, // Use the exact value from env
       state,
       scope: SCOPE,
     };
 
-    // Add parameters to the URL
+    console.log('[useSpotifyAuth] PARAMS being added to URL:', JSON.stringify(params));
+
+    // Add parameters to the URL (URLSearchParams handles encoding)
     Object.entries(params).forEach(([key, value]) => {
       authUrl.searchParams.append(key, value);
     });
 
+    // Rely on URLSearchParams standard encoding
+    const finalAuthUrl = authUrl.toString();
+    console.log('[useSpotifyAuth] FINAL AUTH URL being used for redirect:', finalAuthUrl);
+
+    // DEBUG: Decode the redirect_uri from the final URL to double-check
+    const constructedParams = new URLSearchParams(authUrl.search);
+    const decodedRedirectUri = decodeURIComponent(constructedParams.get('redirect_uri') || '');
+    console.log('[useSpotifyAuth] DECODED redirect_uri from FINAL AUTH URL:', decodedRedirectUri);
+
+    console.log('[useSpotifyAuth] Redirecting to Spotify...');
     // Redirect to Spotify authorization page
-    window.location.href = authUrl.toString();
+    window.location.href = finalAuthUrl;
   }, []);
 
   const exchangeCodeForToken = useCallback(async (code: string) => {

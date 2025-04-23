@@ -3,14 +3,17 @@ const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 const API_BASE_URL = 'https://api.spotify.com/v1';
 
-// Get client ID from environment variable or use the hardcoded one
-const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '1a30b2c228d143828b877024ef5da313';
+// Get client ID from environment variable
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+console.log('SpotifyService - Client ID:', CLIENT_ID);
+console.log('SpotifyService - All env vars:', import.meta.env);
 
-// Determine the appropriate redirect URI based on environment
-const isProduction = window.location.hostname !== 'localhost';
-const REDIRECT_URI = isProduction
-  ? 'https://playlist-alpha-project.vercel.app/spotify-callback'
-  : 'https://3001-2600-1012-b215-a643-513-1fb3-9dd1-9024.ngrok-free.app/api/auth/spotify/callback';
+// Always use the configured redirect URI from environment
+const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;
+if (!REDIRECT_URI) {
+  console.error('VITE_REDIRECT_URI is not configured in environment variables');
+}
+console.log('SpotifyService - Redirect URI:', REDIRECT_URI);
 
 const SCOPES = [
   'user-read-private',
@@ -20,7 +23,7 @@ const SCOPES = [
   'playlist-read-private',
   'playlist-read-collaborative',
   'streaming'
-].join('%20');
+].join(' ');
 
 // Local storage keys
 const TOKEN_KEY = 'spotify_access_token';
@@ -31,7 +34,9 @@ const TOKEN_EXPIRY_KEY = 'spotify_token_expiry';
  * Generate the Spotify authorization URL
  */
 export const getAuthUrl = (): string => {
-  return `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code&show_dialog=true`;
+  const authUrl = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&response_type=code&show_dialog=true`;
+  console.log('SpotifyService - Full auth URL:', authUrl);
+  return authUrl;
 };
 
 /**
@@ -273,11 +278,12 @@ export const isValidSpotifyPlaylistUrl = (url: string): boolean => {
  * Import user's Spotify profile data to the application
  */
 export const importSpotifyProfile = async (): Promise<any | null> => {
+  const API_URL = import.meta.env.VITE_API_URL || '';
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
 
-    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/spotify/profile/import`, {
+    const response = await fetch(`${API_URL}/api/spotify/profile/import`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

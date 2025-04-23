@@ -24,7 +24,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
 }
@@ -35,7 +34,6 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   login: async () => {},
-  signup: async () => {},
   logout: () => {},
   updateProfile: async () => {},
 });
@@ -96,33 +94,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Signup function - in a real app, this would call your API
-  const signup = async (username: string, email: string, _password: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      // In production, replace with actual API call using username, email, and _password
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mock successful signup response
-      const mockUser: User = {
-        id: '123',
-        username,
-        email,
-        avatar: 'https://picsum.photos/200/200',
-        bio: ''
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Logout function
   const logout = () => {
     setUser(null);
@@ -155,8 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user, 
         isAuthenticated: !!user, 
         isLoading, 
-        login, 
-        signup, 
+        login,
         logout,
         updateProfile
       }}
